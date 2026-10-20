@@ -1,0 +1,13 @@
+.git
+.tmp
+**/.DS_Store
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.env
+**/.env.*
+deploy/secrets
+docs
+goals

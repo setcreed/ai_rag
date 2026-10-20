@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>企业知识库 RAG 与 Agent 开发面试准备</title><style>
+:root {color-scheme:light; --ink:#17212d; --muted:#536172; --rule:#d9dfe6; --link:#1d5480;}
+* {box-sizing:border-box;} html {scroll-behavior:smooth; scroll-padding-top:24px;}
+body {margin:0; background:#fff; color:var(--ink); font:16px/1.9 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
+.layout {max-width:1260px; margin:0 auto; display:grid; grid-template-columns:250px minmax(0,1fr); gap:50px; padding:42px 36px 80px;}
+aside {position:sticky; top:30px; align-self:start; max-height:calc(100vh - 60px); overflow:auto; padding-right:20px; border-right:1px solid var(--rule); font-size:13px; line-height:1.65;}
+.nav-title {font-size:15px; font-weight:600; color:#000; margin-bottom:16px;}
+aside a {display:block; margin:8px 0; color:var(--muted); text-decoration:none;}
+aside a.level3 {padding-left:12px; font-size:12px;} aside a:hover {color:var(--link);}
+main {min-width:0; max-width:870px;}
+h1,h2,h3,h4 {color:#000; line-height:1.5; font-weight:650; scroll-margin-top:25px;}
+h1 {font-size:32px; letter-spacing:-.5px; margin:0 0 20px;}
+h2 {font-size:25px; margin:62px 0 22px; border-top:1px solid var(--rule); padding-top:26px;}
+h3 {font-size:20px; margin:36px 0 14px;} h4 {font-size:17px; margin:28px 0 9px;}
+p {margin:0 0 17px;} strong {font-weight:650;} a {color:var(--link); text-underline-offset:3px; overflow-wrap:anywhere;}
+code {font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; background:#f4f6f8; border-radius:3px; padding:2px 4px;}
+pre {margin:22px 0; padding:18px 20px; background:#f6f8fa; border:1px solid var(--rule); overflow:auto; line-height:1.8;}
+pre code {font-family:ui-monospace,SFMono-Regular,"PingFang SC",monospace; background:none; padding:0; white-space:pre;}
+ul,ol {padding-left:26px; margin:12px 0 24px;} li {padding-left:4px; margin:6px 0;}
+.table-scroll {overflow:auto; margin:20px 0 26px;} table {width:100%; border-collapse:collapse; font-size:14px; line-height:1.7;}
+th,td {border:1px solid #d9d9d9; padding:12px 14px; vertical-align:middle; text-align:left;}
+th {background:#eaf0f6; color:#000; font-weight:600;} tr:nth-child(even) td {background:#fafbfd;}
+figure {margin:26px 0;} svg {display:block; width:100%; height:auto; overflow:visible;} figcaption {font-size:13px; color:var(--muted); margin-top:10px;}
+.source-line {font-size:12px; color:var(--muted); white-space:nowrap;}
+.document-footer {border-top:1px solid var(--rule); margin-top:50px; padding-top:18px; font-size:13px; color:var(--muted);}
+@media(max-width:980px) {.layout {display:block; padding:28px 24px 60px;} aside {position:static; max-height:none; border-right:0; border-bottom:1px solid var(--rule); padding-bottom:20px; margin-bottom:32px;} aside a.level3 {display:none;} h1 {font-size:28px;}}
+@media print {aside {display:none;} .layout {display:block; padding:0; max-width:none;} main {max-width:none;} body {font-size:10.5pt;line-height:1.65;} h1 {font-size:22pt;} h2 {font-size:17pt;margin-top:24pt; padding-top:12pt;} h3 {font-size:13pt;} h4 {font-size:11pt;} h1,h2,h3,h4 {break-after:avoid;} p {orphans:3;widows:3;margin-bottom:8pt;} table {font-size:9pt;} tr,figure {break-inside:avoid;} thead {display:table-header-group;} .table-scroll {overflow:visible;} a {color:#17212d;text-decoration:none;} pre {white-space:pre-wrap;} @page {size:A4;margin:18mm;}}
+</style></head>
+<body><div class="layout"><aside aria-label="文档目录"><div class="nav-title">阅读目录</div><a class="level2" href="#section-1">1 阅读方法与术语</a>
+<a class="level2" href="#section-2">2 项目介绍与业务问题</a>
+<a class="level3" href="#section-3">2.1 项目定位</a>
+<a class="level3" href="#section-4">2.2 三十秒项目介绍</a>
+<a class="level3" href="#section-5">2.3 两分钟项目介绍</a>
+<a class="level3" href="#section-6">2.4 用一个问题贯穿系统</a>
+<a class="level2" href="#section-7">3 工作内容与个人贡献</a>
+<a class="level3" href="#section-8">3.1 项目中包含哪些工程工作</a>
+<a class="level3" href="#section-9">3.2 现阶段如何描述工作内容</a>
+<a class="level3" href="#section-10">3.3 不应直接写进简历的内容</a>
+<a class="level2" href="#section-11">4 架构与核心数据关系</a>
+<a class="level3" href="#section-12">4.1 系统组成</a>
+<a class="level3" href="#section-13">4.2 为什么使用两个数据库</a>
+<a class="level3" href="#section-14">4.3 核心关系</a>
+<a class="level2" href="#section-15">5 技术方案与设计依据</a>
+<a class="level3" href="#section-16">5.1 多格式文档解析</a>
+<a class="level3" href="#section-17">5.2 递归分块与父子分块</a>
+<a class="level3" href="#section-18">5.3 向量与 BM25 混合检索</a>
+<a class="level3" href="#section-19">5.4 重排与分数量纲</a>
+<a class="level3" href="#section-20">5.5 查询改写与多轮问答</a>
+<a class="level3" href="#section-21">5.6 Agentic RAG 条件工作流</a>
+<a class="level3" href="#section-22">5.7 评测与反馈闭环</a>
+<a class="level2" href="#section-23">6 由浅入深的模拟面试</a>
+<a class="level3" href="#section-24">第一组 项目理解与个人工作</a>
+<a class="level3" href="#section-30">第二组 文档处理与知识更新</a>
+<a class="level3" href="#section-36">第三组 混合检索与排序</a>
+<a class="level3" href="#section-44">第四组 查询理解与对话交互</a>
+<a class="level3" href="#section-50">第五组 Agent 状态编排与工具调用</a>
+<a class="level3" href="#section-59">第六组 效果评测与实验设计</a>
+<a class="level3" href="#section-66">第七组 生产工程与失败路径</a>
+<a class="level3" href="#section-73">第八组 深入追问与个人证据</a>
+<a class="level2" href="#section-77">7 将研究转化成可写进简历的实践</a>
+<a class="level3" href="#section-78">7.1 实践一 修复检索正确性</a>
+<a class="level3" href="#section-79">7.2 实践二 补足 Agent 应用配置与工具执行</a>
+<a class="level3" href="#section-80">7.3 实践三 建立端到端效果对照</a>
+<a class="level3" href="#section-81">7.4 实践记录模板</a>
+<a class="level2" href="#section-82">8 面试前复习与源码导航</a>
+<a class="level3" href="#section-83">8.1 建议的源码阅读顺序</a>
+<a class="level3" href="#section-84">8.2 十分钟复习清单</a>
+<a class="level3" href="#section-85">8.3 验证边界</a><p>正文含 45 道连续追问。使用浏览器查找搜索问题，打印可保存为 PDF。</p></aside>
+<main><h1 id="section-0">企业知识库 RAG 与 Agent 开发面试准备</h1>
+<p>适用方向：AI 应用开发与 Agent 开发。</p>
+<p>这份文档帮助你讲清项目的业务问题、工作内容、架构、实现细节和设计取舍，并通过 45 道连续追问检查理解深度。先阅读项目说明，再遮住答案进行模拟面试，最后用实践验收清单建立自己的贡献证据。</p>
+<p><strong>核心判断：</strong>项目实现了较完整的 RAG 应用链路，包括文档处理、混合检索、重排、引用、反馈和评测；Agent 部分是基于 LangGraph 的条件工作流，尚未形成模型自主选择多个工具的完整执行循环。</p>
+<p><strong>材料边界：</strong>本文基于当前源码、SQL 结构和测试文件的静态研读，未启动数据库、未调用真实模型、未完成运行性能验证。原项目实现不能直接当作个人工作成果；研究、复现、二次开发和业务上线应分别描述。建议改造都标记为待实践，不代表已经实现。</p>
+<h2 id="section-1">1 阅读方法与术语</h2>
+<p>第一次阅读按第 2 至第 5 章理解业务和技术。第二次从第 6 章开始练习问答。第三次按第 7 章完成独立实践，把测试记录、截图、评测报告和自己的代码改动连接起来。</p>
+<p><strong>先用一个熟悉的场景理解系统：</strong>把企业知识库想成一位会查资料的客服。管理员先把文件整理成便于查找的卡片；用户提问时，系统先找出相关卡片，再让大模型根据卡片组织回答。这里的 RAG 负责“先查资料再回答”，Agent 工作流负责“检查资料和回答是否够用，必要时再查一次”。这只是帮助理解的比喻，实际效果仍取决于解析质量、检索策略和模型输出。</p>
+<div class="table-scroll"><table><thead><tr><th>术语</th><th>专业含义</th><th>白话理解</th></tr></thead><tbody>
+<tr><td>RAG</td><td>回答前检索企业资料，将资料加入模型输入</td><td>先翻资料，再根据查到的内容回答</td></tr>
+<tr><td>Chunk</td><td>文档切分出的片段，是检索的基本单元</td><td>把长文件拆成一张张可搜索的小卡片</td></tr>
+<tr><td>Embedding</td><td>将文本编码成向量，用距离表达语义接近程度</td><td>把文字变成一串数字，让系统比较意思是否接近</td></tr>
+<tr><td>BM25</td><td>根据关键词出现情况和文档长度等因素排序的检索方法</td><td>用户写了型号或错误码时，按关键词找原文</td></tr>
+<tr><td>RRF</td><td>根据各路排名融合结果，不直接相加原始分数</td><td>综合多份搜索结果的名次，排出一份总榜</td></tr>
+<tr><td>Rerank</td><td>结合问题和候选片段，重新判断相关性并排序</td><td>对初筛出的资料再逐条复核，挑出更能回答问题的内容</td></tr>
+<tr><td>Prompt</td><td>发送给模型的指令和上下文</td><td>模型作答前看到的题目、规则和参考资料</td></tr>
+<tr><td>Token</td><td>模型处理文本时使用的基本计量单位</td><td>模型的“输入容量”计量；它不等同于字符数或汉字数</td></tr>
+<tr><td>OCR</td><td>从图片中识别文字的技术</td><td>把扫描件或照片里的字转成可搜索文本</td></tr>
+<tr><td>AgentState</td><td>LangGraph 节点之间传递的执行状态</td><td>工作流每一步共享的“当前进度单”，记录问题、资料、答案和重试次数</td></tr>
+<tr><td>LLM-as-judge</td><td>使用大模型判断相关性、事实支撑或评测指标</td><td>请另一个模型按规则打分；它是辅助裁判，不是真值来源</td></tr>
+<tr><td>SSE</td><td>服务端持续向浏览器发送事件的传输方式</td><td>浏览器保持接收通道，服务端有新进度就逐条推送</td></tr>
+</tbody></table></div>
+<p><strong>一条问答链路可以概括成四步：</strong>文件先被解析、切分和向量化；问题进入后，系统从资料库召回候选片段；排序后把相关上下文交给模型；最后把答案、引用和反馈记录下来。第 5 章会解释各步使用的技术术语及其取舍。</p>
+<h2 id="section-2">2 项目介绍与业务问题</h2>
+<h3 id="section-3">2.1 项目定位</h3>
+<p>这是一个企业知识库问答平台。管理员维护知识库、上传文件、配置模型和检索策略；用户通过问答应用查询制度、产品说明和售后资料。系统需要把多种格式的文件转成可检索知识，再根据资料生成回答，并记录依据和用户反馈。</p>
+<p>它服务的典型问题是：企业资料多、格式杂，用户表达与文档用词不一致，单靠关键词搜索不容易找到答案；直接让大模型回答又可能缺少企业内部知识或生成无依据内容。</p>
+<h3 id="section-4">2.2 三十秒项目介绍</h3>
+<p>“这是一个企业知识库 RAG 平台，后端使用 FastAPI，业务数据放在 MySQL，向量数据放在 PostgreSQL 和 pgvector。文档经过解析、分块和向量化后，问答链路通过向量与 BM25 混合检索、RRF 融合及重排获取资料，再由大模型生成回答。它还使用 LangGraph 实现相关性判断和答案支撑检查，并通过用户反馈与离线评测支持策略优化。”</p>
+<p>这段介绍讲的是项目本身。个人介绍时，应另补真实的研究、复现或改造范围。</p>
+<h3 id="section-5">2.3 两分钟项目介绍</h3>
+<p>“项目主要解决企业资料查找效率和问答依据问题。它把管理员侧与用户侧放在同一套前后端系统里：管理员管理文档、模型、Prompt 和检索策略，用户按问答应用进行查询。</p>
+<p>“入库链路先按文件格式提取文本，PDF 表格转成 Markdown，无文字层的 PDF 页面使用 OCR。文本支持递归分块和父子分块，普通块与子块生成向量，父块作为回答上下文保留。</p>
+<p>“在线链路先按策略改写查询，分别进行语义检索和 BM25 关键词检索，再用 RRF 合并排名，按需重排、回填父块和过滤低分结果。普通模式通过 SSE 输出模型增量；Agent 模式由 LangGraph 执行检索、相关性判断、生成和答案支撑检查，失败时有限重试，最后兜底。</p>
+<p>“效果方面，项目提供四个自定义评测指标，并把点踩问题沉淀为待人工补充标准答案的评测用例。它的工程边界也很清楚：后台任务目前在应用进程内，Agent 的工具调用路径由代码固定，多知识库和知识更新一致性还存在需要改进的地方。”</p>
+<h3 id="section-6">2.4 用一个问题贯穿系统</h3>
+<p>假设用户问“GTE3000 超过保修期怎么维修”，资料中使用“GTE-3000”和“质保”。这只是流程示例，不代表已经验证项目对该问题的回答正确。</p>
+<p><strong>先看直观过程：</strong>用户用自己的说法提问，资料可能用了另一种写法。系统要先找到“说的是同一件事”的内容，再判断哪些资料最有帮助，最后把资料交给模型组织语言。每个技术步骤都在减少一种常见落差：词不一样、候选太多、片段太短或回答缺少依据。</p>
+<ol>
+<li>型号写法不同，通过分词补充让两种写法都包含 <code>gte</code> 和 <code>3000</code>。</li>
+<li>“保修”与“质保”的表达差异，由向量检索补足语义匹配。</li>
+<li>两路召回使用 RRF 合并，同一片段按 <code>chunk_id</code> 去重。</li>
+<li>重排模型判断哪些候选最能回答“超期维修”问题。</li>
+<li>如果命中子块，则回填其父块，提供收费条件等完整上下文。</li>
+<li>资料写入 Prompt，模型生成回答，引用记录保存内容快照。</li>
+<li>如果用户点踩，问题可以进入评测集，人工补标准答案后再回归。</li>
+</ol>
+<h2 id="section-7">3 工作内容与个人贡献</h2>
+<h3 id="section-8">3.1 项目中包含哪些工程工作</h3>
+<p>下面描述原项目实现中的工作，不等于你已经负责这些模块。</p>
+<div class="table-scroll"><table><thead><tr><th>工作模块</th><th>工程内容</th><th>可解释的能力</th></tr></thead><tbody>
+<tr><td>文档处理</td><td>多格式解析、表格转换、OCR、处理状态与错误记录</td><td>异构数据接入与后台任务设计</td></tr>
+<tr><td>知识组织</td><td>递归分块、父子关系、片段管理与向量化</td><td>检索精度与上下文完整性的取舍</td></tr>
+<tr><td>检索管线</td><td>查询改写、双路召回、RRF、重排、父块回填和阈值</td><td>检索链路设计与效果定位</td></tr>
+<tr><td>问答应用</td><td>应用配置、会话鉴权、SSE、引用快照和反馈</td><td>AI 能力产品化与接口设计</td></tr>
+<tr><td>Agent 工作流</td><td>状态定义、条件边、重试终止、执行日志和进度事件</td><td>可控编排与执行可追踪性</td></tr>
+<tr><td>效果评测</td><td>用例管理、四项指标、批量任务、报告与策略对比</td><td>用评测驱动优化</td></tr>
+</tbody></table></div>
+<h3 id="section-9">3.2 现阶段如何描述工作内容</h3>
+<p>如果目前只完成代码研读，使用“研究并梳理”“分析”“识别问题”，不要使用“独立开发”“负责上线”或“主导建设”。如果完成本地复现，可以增加真实的运行与失败路径验证。如果完成修改，可以明确自己改了哪些接口、状态、算法或测试。</p>
+<p>可用的研究经历表述为：“研究第三方企业知识库项目，梳理文档入库、混合检索、Agent 条件工作流和评测闭环，分析知识更新一致性、模型空间匹配和评测口径问题。”</p>
+<p>完成实践后，工作内容应按“问题、个人改动、设计依据、验证结果”组织。例如：“针对 Agent 仅检索首个知识库的问题，扩展检索上下文以传递全部知识库和应用策略，并增加答案只存在于第二个知识库的回归用例。”只有真正实现且验证后，才能使用这个表述。</p>
+<h3 id="section-10">3.3 不应直接写进简历的内容</h3>
+<p>没有证据时，不写业务用户数、并发规模、检索准确率提升、延迟下降或生产上线结果。模型代码中出现的分数区间、SQL 示例数据和演示截图都不能替代个人实验。</p>
+<p>当前也不宜写“实现多 Agent 协作”“完整自主 Function Calling”“持久化断点恢复”“完善长期记忆”“彻底消除幻觉”。源码没有实现这些能力，或不能支持这样的结论。</p>
+<h2 id="section-11">4 架构与核心数据关系</h2>
+<h3 id="section-12">4.1 系统组成</h3>
+<figure><svg viewBox="0 0 760 370" role="img" aria-label="系统架构与存储职责" xmlns="http://www.w3.org/2000/svg"><title>系统架构与存储职责</title><defs><marker id="arrow-370" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#526477"/></marker></defs><g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="15" text-anchor="middle" fill="#17212d"><rect x="24" y="16" width="214" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="131.0" y="46.0">用户与管理员</text><rect x="24" y="91" width="214" height="58" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="131.0" y="112">Vue 3 前端</text><text x="131.0" y="132" font-size="12" fill="#526477">管理界面与聊天界面</text><rect x="24" y="176" width="214" height="58" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="131.0" y="197">FastAPI API 层</text><text x="131.0" y="217" font-size="12" fill="#526477">请求 鉴权 HTTP 与 SSE</text><rect x="283" y="176" width="210" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="388.0" y="206.0">Service 业务层</text><rect x="283" y="285" width="210" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="388.0" y="315.0">AI 组件层</text><rect x="546" y="108" width="190" height="58" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="641.0" y="129">MySQL</text><text x="641.0" y="149" font-size="12" fill="#526477">业务与片段 会话与评测</text><rect x="546" y="189" width="190" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="641.0" y="219.0">本地原始文件</text><rect x="546" y="267" width="190" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="641.0" y="297.0">PostgreSQL pgvector</text><rect x="546" y="329" width="190" height="35" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="641.0" y="351.5">外部模型</text><polyline points="131,66 131,91" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="131,149 131,176" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="238,202 283,202" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="388,226 388,285" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="493,192 514,192 514,137 546,137" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="493,211 546,211" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="493,306 516,306 516,292 546,292" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/><polyline points="493,318 516,318 516,346 546,346" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-370)"/></g></svg><figcaption>图 1　业务服务协调存储与 AI 组件，业务数据与向量通过片段 ID 关联。</figcaption></figure>
+<p>前端使用 Vue 3、Vite、Element Plus。后端使用 FastAPI 和 Pydantic，业务 ORM 是 Tortoise。LangChain 相关组件用于模型封装、文本切分和文档重排接口，LangGraph 用于状态图编排。</p>
+<p><code>api/</code> 负责请求、鉴权和业务调用；<code>service/</code> 协调模型、数据库与流程；<code>ai/</code> 提供解析、切分、检索、改写、重排、图和评测组件。图通过注入回调记录执行步骤，减轻图层与日志存储之间的耦合，但节点调用的模型配置与工具仍依赖业务数据库。</p>
+<h3 id="section-13">4.2 为什么使用两个数据库</h3>
+<p>MySQL 保存业务实体、文本片段、配置、对话和评测。PostgreSQL 使用 pgvector 保存向量，以及知识库、文档、父块等过滤字段。两边通过 <code>chunk_id</code> 关联，查询结果再按需要回查文档名称。</p>
+<p>这样做便于业务 CRUD 与向量能力分别维护，但引入跨库一致性、两套连接管理和运维成本。源码无法证明它优于单一 PostgreSQL 方案；对于新建的小规模应用，合并存储也可能更简单。这里应解释现有设计及其代价，不把技术数量当作架构水平。</p>
+<h3 id="section-14">4.3 核心关系</h3>
+<pre><code>KnowledgeBase 1 → N KnowledgeDocument 1 → N KnowledgeChunk
+KnowledgeChunk 子块 → parent_id → KnowledgeChunk 父块
+KnowledgeChunk.id → PostgreSQL knowledge_chunk_vector.chunk_id
+
+QaApp N ↔ N KnowledgeBase 通过 QaAppKb 关联
+QaApp 1 → N ChatSession 1 → N ChatMessage
+ChatMessage 1 → N MessageReference
+ChatMessage → MessageFeedback
+
+AgentRun 1 → N AgentStep
+EvalDataset 1 → N EvalCase
+EvalTask → EvalCaseResult 与 EvalReport</code></pre>
+<p>业务模型多以整型 ID 表示关系，不应把图中的关系都理解成 ORM 外键或数据库级联约束。跨表校验和清理由服务代码承担。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/models/knowledge.py">知识模型</a><span class="source-line"> 第 5 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/models/chat.py">对话模型</a><span class="source-line"> 第 5 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/vector_store.py">向量存储</a><span class="source-line"> 第 1 行</span> 。</p>
+<h2 id="section-15">5 技术方案与设计依据</h2>
+<h3 id="section-16">5.1 多格式文档解析</h3>
+<p><strong>白话理解：</strong>这是把 Word、PDF、表格和扫描图片等不同“包装”的资料，拆出后续检索能处理的文字。它负责读出内容，不代表已经理解了表格含义或还原了原文件的完整版面。</p>
+<p><strong>解决的问题：</strong>文件中的内容不一定是可直接读取的纯文本，尤其是 PDF 表格和扫描页。</p>
+<p><strong>如何实现：</strong>PyMuPDF 读取 PDF 文字，pdfplumber 抽表格，无文字层的页面渲染为图片交给 RapidOCR。Word 使用 python-docx，Excel 使用 openpyxl，TXT 和 Markdown 直接读取。表格统一转换成 Markdown，PDF 加入页码标记。</p>
+<p><strong>为什么这样设计：</strong>统一文本输出可以让后续切分和向量化不必理解各种文件格式；Markdown 比散乱字符更容易保留行列关系。</p>
+<p><strong>边界：</strong>Word 的正文与表格分别遍历，原文穿插顺序未完整保留；OCR 不是版面理解系统；PDF 文字与表格可能重复；Excel <code>data_only=True</code> 读取缓存计算结果，不会执行公式计算。页码属于简化标记，不等于精确的跨页坐标溯源。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/loader.py">loader.py</a><span class="source-line"> 第 82 行</span> 。</p>
+<h3 id="section-17">5.2 递归分块与父子分块</h3>
+<p><strong>白话理解：</strong>一本手册不能每次搜索都整本搬出来，也不能切成失去上下文的一句话。子块像目录卡片，负责精准命中；父块像卡片对应的完整段落，负责给模型补齐条件和背景。</p>
+<p><strong>解决的问题：</strong>全文过长，片段太大容易混杂主题，片段太小又丢失条件和上下文。</p>
+<p><strong>如何实现：</strong>递归切分优先尝试段落、换行和中文标点，再按字符切分兜底。父子策略先生成不重叠的大父块，再在各父块内生成可重叠子块。写库时先插父块，把列表下标映射成真实 <code>parent_id</code>。</p>
+<p><strong>为什么这样设计：</strong>小子块承担检索，大父块承担生成；同一父块下多个命中子块合并后，减少重复资料。父块不向量化，可以避免重复存储和父子共同参与召回。</p>
+<p><strong>取舍：</strong>父块会引入更多无关文字和 token 成本，不能越大越好。切分按字符数计量，最终上下文预算仍需要考虑模型 token 限制。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/splitter.py">splitter.py</a><span class="source-line"> 第 109 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/retrieval_service.py">父块回填</a><span class="source-line"> 第 424 行</span> 。</p>
+<h3 id="section-18">5.3 向量与 BM25 混合检索</h3>
+<p><strong>白话理解：</strong>可以把它看成两种搜索员同时找资料：一个理解“保修”和“质保”意思相近，另一个擅长准确查找 <code>GTE-3000</code> 这样的字符。RRF 根据两位搜索员各自的名次汇总结果，避免把不同单位的分数硬加在一起。</p>
+<p><strong>解决的问题：</strong>语义检索可以匹配同义表达，但可能弱化型号、错误码等精确字符；关键词检索可以匹配字符，但不擅长同义表达。</p>
+<p><strong>如何实现：</strong>问题编码为向量，在 PostgreSQL 按知识库、文档和片段类型过滤，再按余弦距离排序。BM25 从 MySQL 读取普通块和子块，使用 jieba 与型号补充分词，在内存计算排名。多份非空榜单通过 RRF 按 <code>chunk_id</code> 融合。</p>
+<p><strong>为什么这样设计：</strong>两路互补；RRF 避免直接比较含义和尺度不同的原始分数。当前融合结果条数取两路 <code>top_k</code> 的最大值，不是无限保留两路并集。</p>
+<p><strong>边界：</strong>向量表固定为 <code>vector(1024)</code>，SQL 建立 IVFFlat 索引，但实际是否使用索引要看执行计划。BM25 每次重建索引，候选上限为 <code>5000</code>，超出部分可能不参与检索。各路及各查询目前顺序执行。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/retrieval_service.py">检索主流程</a><span class="source-line"> 第 172 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/retriever.py">BM25 与 RRF</a><span class="source-line"> 第 56 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/ai_rag_vector.sql">向量索引</a><span class="source-line"> 第 247 行</span> 。</p>
+<h3 id="section-19">5.4 重排与分数量纲</h3>
+<p><strong>白话理解：</strong>混合检索先从大量资料里圈出一批“可能有用”的候选；Rerank 再拿具体问题逐条比较，调整先后顺序。它能重新排序已找到的内容，但不能凭空找回第一轮完全没召回的资料。</p>
+<p><strong>解决的问题：</strong>语义相似不一定意味着能回答问题；候选资料顺序也会影响生成。</p>
+<p><strong>如何实现：</strong>DashScope 原生接口接收问题与候选文本，返回索引和相关性分数，代码再映射回原片段。重排位于 RRF 后、父块回填前。</p>
+<p><strong>为什么这样设计：</strong>重排比粗召回成本高，先减少候选，再精排；对子块精排能够保留更集中的匹配对象，随后补上下文。</p>
+<p><strong>阈值原则：</strong>使用 <code>score_scale</code> 标识最终分数类型，余弦相似度与重排分分别配置阈值，BM25 和 RRF 不套用固定相关性阈值。余弦相似度数学范围是 <code>[-1, 1]</code>，源码中的“0 到 1”注释并不严谨；本项目允许配置的向量阈值范围为 <code>0</code> 至 <code>1</code>。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/reranker.py">reranker.py</a><span class="source-line"> 第 29 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/retrieval_service.py">阈值处理</a><span class="source-line"> 第 330 行</span> 。</p>
+<h3 id="section-20">5.5 查询改写与多轮问答</h3>
+<p><strong>白话理解：</strong>用户说“那它过期了怎么办”，单看这句话可能不知道“它”指什么。查询改写会在检索前把问题补完整或换成更容易命中文档的表达；它改变的是搜索用的问题，不自动等于模型已经记住完整聊天历史。</p>
+<p><strong>解决的问题：</strong>口语问题与文档写法不同；“它”“那种情况”缺少独立检索信息。</p>
+<p><strong>如何实现：</strong>多查询扩展保留原问题并添加其他表达；指代消解根据历史补全问题；HyDE 生成假设答案，将其与原问题拼接用于检索。普通问答随后拼接资料与问题，使用 <code>astream</code> 输出增量。</p>
+<p><strong>为什么这样设计：</strong>改写在检索前修正输入，引用在生成前推送，正文完成后发出结束事件。引用保存内容快照，便于回看当时的依据。</p>
+<p><strong>边界：</strong>历史主要进入指代消解，不直接进入最终生成 Prompt；普通模式开关未启用指代消解时，省略表达可能仍然检索失败。上下文按字符预算组装，遇到下一块放不下时停止，没有完整的 token 预算与智能截断机制。引用集合也不等于答案中每个句子已经验证过来源。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/query_rewriter.py">查询改写</a><span class="source-line"> 第 42 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/chat_service.py">普通问答</a><span class="source-line"> 第 193 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/vue/src/utils/sse.js">前端 SSE</a><span class="source-line"> 第 26 行</span> 。</p>
+<h3 id="section-21">5.6 Agentic RAG 条件工作流</h3>
+<p><strong>白话理解：</strong>普通 RAG 像查一次资料就作答；这里的 Agent 流程像一张预先画好的检查清单：先查资料，再判断是否相关；答案生成后，再检查有没有资料支撑。检查不通过就按规则重试，超过次数则停止并给出兜底结果。</p>
+<figure><svg viewBox="0 0 760 385" role="img" aria-label="Agentic RAG 条件流程" xmlns="http://www.w3.org/2000/svg"><title>Agentic RAG 条件流程</title><defs><marker id="arrow-385" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#526477"/></marker></defs><g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="15" text-anchor="middle" fill="#17212d"><rect x="14" y="34" width="156" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="92.0" y="64.0">准备或改写</text><rect x="210" y="34" width="130" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="275.0" y="64.0">检索</text><rect x="381" y="34" width="154" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="458.0" y="64.0">相关性判断</text><rect x="580" y="34" width="160" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="660.0" y="64.0">生成答案</text><rect x="580" y="151" width="160" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="660.0" y="181.0">答案支撑检查</text><rect x="580" y="286" width="160" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="660.0" y="316.0">结束</text><rect x="240" y="286" width="270" height="50" rx="5" fill="#f5f7fa" stroke="#bdc8d3"/><text x="375.0" y="316.0">兜底并清空引用</text><polyline points="170,59 210,59" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><polyline points="340,59 381,59" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><polyline points="535,59 580,59" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><polyline points="660,84 660,151" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><polyline points="458,84 458,129 92,129 92,84" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><text x="270" y="120" font-size="12" fill="#526477">不相关且未超限  改写后重新检索</text><polyline points="740,176 753,176 753,12 660,12 660,34" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><text x="657" y="7" font-size="11" fill="#526477">无支撑且未超限  重新生成</text><polyline points="660,201 660,286" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><text x="698" y="247" font-size="12" fill="#526477">有支撑</text><polyline points="458,84 458,95 548,95 548,260 375,260 375,286" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><text x="391" y="251" font-size="12" fill="#526477">持续不相关达到上限</text><polyline points="580,176 548,176" fill="none" stroke="#526477" stroke-width="1.6" marker-end="url(#arrow-385)"/><text x="414" y="189" font-size="12" fill="#526477">持续无支撑达到上限</text><text x="380" y="368" font-size="12" fill="#526477">工具调用路径由代码固定  模型判断控制分支</text></g></svg><figcaption>图 2　重检索与重新生成是不同分支，失败达到上限后终止。</figcaption></figure>
+<p><strong>解决的问题：</strong>普通 RAG 只检索和生成一次，难以处理召回不相关或答案缺乏依据的情况。</p>
+<p><strong>如何实现：</strong>LangGraph 定义状态和六个节点，条件边根据 <code>is_relevant</code>、<code>is_grounded</code> 和计数决定重试或终止。第一轮无历史时使用原问题，有历史时先做指代消解；不相关后再改写。持续不相关时，第 <code>3</code> 次失败后兜底；持续无支撑时，第 <code>2</code> 次失败后兜底。</p>
+<p><strong>为什么这样设计：</strong>把控制流程写在图中，便于解释分支和单独检查流程。数据库记录步骤，SSE 推送进度，让等待过程可见。</p>
+<p><strong>边界：</strong>工具由代码固定调用，尚无完整的自主工具选择循环；只检索 <code>kb_ids[0]</code>，使用全局默认检索策略；图内模型与 Prompt 也没有继承全部应用配置。<code>MAX_GRAPH_STEPS = 10</code> 被用于计算 <code>recursion_limit = 30</code>，不是严格的十节点业务计数保护。步骤日志的耗时当前写为 <code>0</code>。未配置持久化 checkpointer。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/graph.py">状态图</a><span class="source-line"> 第 243 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/agent_service.py">Agent 执行</a><span class="source-line"> 第 96 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/tools.py">工具实现</a><span class="source-line"> 第 22 行</span> 。</p>
+<h3 id="section-22">5.7 评测与反馈闭环</h3>
+<p><strong>白话理解：</strong>不能只看一两个演示问题就判断系统变好了。评测把一组固定问题反复交给系统，分别检查“该找的资料有没有找着”“答案有没有依据”“答案有没有答到问题”，再结合耗时和成本看改动是否值得。</p>
+<p><strong>解决的问题：</strong>单次演示不能证明策略有效，用户反馈也需要进入可重复的回归流程。</p>
+<p><strong>如何实现：</strong>评测集来自人工录入、文档生成和点踩沉淀。点踩用例默认停用且标准答案留空，人工补充后启用。批量任务按策略检索、生成、计算四项指标，再汇总报告，保存策略快照。当前每批最多 <code>20</code> 条启用用例。</p>
+<div class="table-scroll"><table><thead><tr><th>指标</th><th>计算对象</th><th>当前实现</th></tr></thead><tbody>
+<tr><td>Context Recall</td><td>标准答案或参考片段</td><td>参考 ID 命中比例，或标准答案陈述的资料支撑比例</td></tr>
+<tr><td>Context Precision</td><td>排序后的召回资料</td><td>判断相关性，对相关位置的累计精确率取平均</td></tr>
+<tr><td>Faithfulness</td><td>生成答案</td><td>答案陈述的资料支撑比例</td></tr>
+<tr><td>Answer Relevancy</td><td>问题与答案</td><td>从答案反推一个问题，再与原问题计算向量相似度</td></tr>
+</tbody></table></div>
+<p><strong>为什么这样设计：</strong>把“资料没找到”和“资料找到但回答不好”分开诊断。参考 ID 可以减少部分裁判模型调用，报告快照帮助解释当时的策略。</p>
+<p><strong>边界：</strong>这是自定义实现，并非直接调用 RAGAS。问答与裁判使用同一条全局对话模型配置；<code>temperature = 0</code> 不能保证绝对确定性。评测主要覆盖普通 RAG，没有直接运行完整 Agent 图。裁判配置、Prompt 和用例没有完整冻结成可重现版本。</p>
+<p>代码入口：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/evaluator.py">evaluator.py</a><span class="source-line"> 第 162 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/eval_task_service.py">评测任务</a><span class="source-line"> 第 122 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/eval_dataset_service.py">反馈沉淀</a><span class="source-line"> 第 311 行</span> 。</p>
+<h2 id="section-23">6 由浅入深的模拟面试</h2>
+<p>每组按顺序提问。答案采用“当前实现、设计理由、边界或改进”的顺序，涉及未实现能力时明确使用“如果改造”。你应理解后用自己的话回答，不要把参考答案中的项目事实改写成未经实践的个人成果。</p>
+<h3 id="section-24">第一组 项目理解与个人工作</h3>
+<p>考察重点：能否说清业务目标、技术选择和个人贡献。</p>
+<h4 id="section-25" class="question">Q01 请介绍一下这个项目</h4>
+<p><strong>参考答案：</strong>这是企业知识库问答平台，解决资料格式杂、查找困难和回答缺乏依据的问题。离线把文档解析、切分并向量化；在线通过向量和关键词检索、融合及重排获取资料，再生成回答。平台还有 LangGraph 条件工作流、引用、反馈和评测，能够支持对检索与回答效果的分析。</p>
+<h4 id="section-26" class="question">Q02 为什么选择 RAG 不直接把资料放进 Prompt 或微调</h4>
+<p><strong>参考答案：</strong>全文放入 Prompt 会随着资料量增加带来上下文限制和调用成本，也难以定位相关内容。RAG 只取相关资料，更新知识主要重建索引，不必训练模型。微调可以改善行为、格式和特定任务表现，但不能简单替代可更新、可追溯的知识检索。选择仍取决于任务，不能声称 RAG 在所有场景都优于微调。</p>
+<h4 id="section-27" class="question">Q03 这里面你具体负责了什么</h4>
+<p><strong>参考答案：</strong>必须按实际阶段回答。目前只有研读时，可以说：“这是第三方项目，我重点研究检索管线、Agent 编排和评测，尚未把原项目实现当成自己的开发成果。”完成改造后，再说明具体问题、修改文件和回归结果。不要用“负责整个架构”替代个人证据；面试官通常会继续追问一处具体决策或失败案例。</p>
+<h4 id="section-28" class="question">Q04 为什么选 FastAPI LangChain 和 LangGraph</h4>
+<p><strong>参考答案：</strong>FastAPI 提供异步接口、参数校验和依赖注入，适合编排数据库与模型的网络调用。LangChain 相关组件减少模型与切分器的适配代码。LangGraph 把状态和条件流程显式表达，便于管理重试与终止。它们不是必需品，固定短流程也可以手写；选择框架的价值应是减少当前复杂度，而不是增加技术栈数量。</p>
+<h4 id="section-29" class="question">Q05 两个数据库是不是过度设计</h4>
+<p><strong>参考答案：</strong>现有系统将业务数据放 MySQL、向量放 PostgreSQL，职责明确，但有跨库一致性和运维代价。如果是新建应用且没有 MySQL 约束，单一 PostgreSQL 可能更简单。我会先确认业务已有基础设施、数据规模和运维能力，再决定是否拆分。不能仅凭源码证明双库方案更快或更可扩展。</p>
+<h3 id="section-30">第二组 文档处理与知识更新</h3>
+<p>考察重点：能否从文件格式深入到分块、一致性和失败恢复。</p>
+<h4 id="section-31" class="question">Q06 文件上传后如何变成可查询知识</h4>
+<p><strong>参考答案：</strong>文件先保存到本地，再创建知识文档记录。管理员分别触发解析、切分和向量化。解析产出统一文本，切分生成普通块或父子块，普通块与子块分批调用 Embedding 并写入 pgvector，MySQL 更新状态与计数。当前是分阶段触发的后台任务，不是上传后自动串联的完整任务流水线。</p>
+<h4 id="section-32" class="question">Q07 PDF 表格和扫描页怎么处理</h4>
+<p><strong>参考答案：</strong>PDF 文字由 PyMuPDF 提取，表格由 pdfplumber 转成 Markdown。整页没有文字层时渲染为图片，使用 RapidOCR 识别。这样的输出能复用后续文本切分，但复杂版面、合并单元格、混合图片页和表格重复都需要真实样本验证。不能把“能提取文字”理解成“完整还原版面和业务语义”。</p>
+<h4 id="section-33" class="question">Q08 chunk_size 和 chunk_overlap 怎么选</h4>
+<p><strong>参考答案：</strong>先根据文档类型和问题粒度确定候选范围，再用固定评测集比较召回、答案质量、上下文长度和延迟。小块可能更聚焦但丢失条件，大块更完整但噪声更多，重叠能保护边界但增加重复。当前实现按字符长度切分，所以参数不能直接当 token 数。没有普适最佳值，应保留选择依据和对照实验。</p>
+<h4 id="section-34" class="question">Q09 为什么父子分块 直接把所有块变大不行吗</h4>
+<p><strong>参考答案：</strong>大块中的多个主题会稀释向量表达，而小块可能缺少回答所需条件。父子分块让子块承担匹配、父块承担上下文。项目先对子块召回和重排，再按 <code>parent_id</code> 回填父块，同父块去重。代价是父块噪声与 token 成本，因此仍需验证回填是否改善回答，不能假设开启后必然更好。</p>
+<h4 id="section-35" class="question">Q10 文档更新后如何避免检索旧知识</h4>
+<p><strong>参考答案：</strong>理想流程要让旧片段和旧向量同时失效。当前源码存在缺口：重新解析只重置状态，没有删除旧数据；后续切分又按文档状态决定是否清向量，因此可能留下旧向量。最小修复需要明确旧向量清理与失败状态；更完整的方案是为文档、片段和向量增加版本，构建成功后切换可检索版本。验收应覆盖更新、失败、重复执行和重启。</p>
+<p>代码核对：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/document_parse_service.py">解析完成处理</a><span class="source-line"> 第 57 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/knowledge_chunk_service.py">重新切分</a><span class="source-line"> 第 94 行</span> 。</p>
+<h3 id="section-36">第三组 混合检索与排序</h3>
+<p>考察重点：能否讲清算法作用、实际 SQL、分数和性能边界。</p>
+<h4 id="section-37" class="question">Q11 向量检索是怎么实现的</h4>
+<p><strong>参考答案：</strong>先用 Embedding 模型把问题编码，再在向量表限定知识库、文档和普通块或子块，用 <code>&lt;=&gt;</code> 计算余弦距离，升序取 Top K。返回分数为 <code>1 - distance</code>。向量维度固定为 <code>1024</code>，脚本建立 IVFFlat 索引，但 SQL 有索引不代表执行时一定使用，性能需要执行计划和实测。</p>
+<h4 id="section-38" class="question">Q12 为什么 Embedding 模型不能随便换</h4>
+<p><strong>参考答案：</strong>模型不同，向量所在的语义空间可能不同，即使维度相同也不能直接比较。项目在向量化时绑定知识库与模型，但查询仍使用全局启用模型，保护不完整。改造时应按知识库绑定的模型生成查询向量，并处理跨模型知识库；模型版本也应纳入约束，不能只比较一个可被修改的配置 ID。</p>
+<h4 id="section-39" class="question">Q13 为什么向量检索还需要 BM25</h4>
+<p><strong>参考答案：</strong>型号、错误码和专有词需要精确字符匹配，语义模型可能把它们当成接近的概念。BM25 能补足这些召回。项目针对 <code>GTE3000</code> 等连写词补充字母和数字分词，使其与 <code>GTE-3000</code> 对齐。BM25 也不是天然正确，例如中文分词、同义词和高频词都影响结果，所以两路互补并通过评测验证。</p>
+<h4 id="section-40" class="question">Q14 两路分数为什么不加权相加 RRF 怎么算</h4>
+<p><strong>参考答案：</strong>BM25 与余弦相似度尺度不同，未经校准直接加权可能使一路支配结果。RRF 使用各榜单排名，某片段贡献为 <code>1 / (k + rank)</code>，多路出现就求和。以 <code>k = 60</code> 为例，两个榜单分别第 1 与第 3，分数约为 <code>1/61 + 1/63 = 0.03227</code>。它弱化分数尺度问题，但也丢弃原始分差，不是必然最优。</p>
+<h4 id="section-41" class="question">Q15 已经融合排名 为什么还要 Rerank</h4>
+<p><strong>参考答案：</strong>粗召回回答“可能相关吗”，重排进一步判断“对这个问题有多相关”。项目把问题和候选文本送到远程重排服务，再按返回索引映射原片段，保留前 N。它增加网络调用和成本，因此适合少量候选。若候选召回根本没有答案，重排也无法补回，所以先看召回，再优化排序。</p>
+<h4 id="section-42" class="question">Q16 为什么要区分 score_scale</h4>
+<p><strong>参考答案：</strong><code>score</code> 会被各阶段覆盖，可能代表余弦相似度、BM25 分数、RRF 排名分或重排分。若统一设置 <code>0.3</code> 阈值，两路 RRF 分数常在百分之几，可能被全部过滤。项目显式传递量纲，分别使用向量和重排阈值，BM25 与 RRF 不应用固定相关性门槛。即使两个分数都在 <code>0</code> 至 <code>1</code>，也不能默认含义一致。</p>
+<h4 id="section-43" class="question">Q17 上万甚至百万片段 当前检索还能用吗</h4>
+<p><strong>参考答案：</strong>不能直接承诺。BM25 每次读取最多 <code>5000</code> 条并重建内存索引，既有性能成本，也可能漏掉上限外的答案。向量连接每次新建，召回顺序执行，也需要优化。先建立数据规模和延迟基线，检查 SQL 与索引，再考虑持久化关键词索引、连接池和有界并发。这些是改造方向，不是当前代码能力。</p>
+<p>代码核对：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/retrieval_service.py">模型选择</a><span class="source-line"> 第 149 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/retrieval_service.py">召回与融合</a><span class="source-line"> 第 172 行</span> 。</p>
+<h3 id="section-44">第四组 查询理解与对话交互</h3>
+<p>考察重点：能否解释模型输入、对话上下文、流式协议和引用含义。</p>
+<h4 id="section-45" class="question">Q18 多查询扩展和指代消解有什么区别</h4>
+<p><strong>参考答案：</strong>多查询扩展针对同一意图生成不同表达，扩大召回覆盖；指代消解结合历史补全当前省略问题，使其独立可检索。项目的多查询保留原问题，指代消解在没有历史时直接返回原问题。两者目的不同，不能说“有历史消息表就已经解决多轮理解”。</p>
+<h4 id="section-46" class="question">Q19 HyDE 生成假答案 会不会把错误带进回答</h4>
+<p><strong>参考答案：</strong>项目将假设答案与原问题一起用于检索，不把它直接作为最终回答资料。它希望生成内容在表达上更接近文档，但可能引入错误术语或改变检索方向。最终回答仍应依赖真实召回资料，并对 HyDE 单独做对照评测。它是一种候选策略，不能因增加一次模型调用就认为效果一定提升。</p>
+<h4 id="section-47" class="question">Q20 多轮对话历史到底在哪里使用</h4>
+<p><strong>参考答案：</strong>历史从会话消息表读取，主要供指代消解使用。普通生成 Prompt 只接收资料和当前问题，没有把完整历史直接传进去，所以用户要求“沿用上一轮格式”这类需求不一定得到满足。如果改造，应明确历史窗口、问题改写结果和生成消息输入，按 token 控制预算，并避免重复提问被内容过滤逻辑误删。</p>
+<h4 id="section-48" class="question">Q21 为什么用 SSE 不用 WebSocket</h4>
+<p><strong>参考答案：</strong>这里主要是服务端向浏览器推送进度和答案，SSE 足够满足单向流式需求。问答接口是 POST 且需 token 头，所以前端用 <code>fetch</code> 读流而不是原生 EventSource。普通模式发正文增量；Agent 模式发节点进度，校验完成后一次性发最终答案。若需要语音等持续双向交互，再评估 WebSocket。</p>
+<h4 id="section-49" class="question">Q22 有引用是否就能保证答案正确</h4>
+<p><strong>参考答案：</strong>不能。引用证明本次取得过哪些资料，内容快照能保留历史依据，但模型可能误读、混合条件或写出资料未支持的细节。还要检查引用是否真正进入生成上下文、答案句子与资料是否对应，以及资料本身是否有效。项目的引用记录与上下文截断也需要对齐，不能把所有召回资料都视为实际使用过的证据。</p>
+<h3 id="section-50">第五组 Agent 状态编排与工具调用</h3>
+<p>考察重点：能否区分条件工作流与自主 Agent，并解释终止、恢复和权限。</p>
+<h4 id="section-51" class="question">Q23 这个 Agent 相比普通 RAG 多了什么</h4>
+<p><strong>参考答案：</strong>普通模式检索一次后生成。Agentic 模式增加资料相关性判断和答案支撑检查：不相关则改写重检索，无支撑则重新生成，达到失败上限则兜底。它改变的是执行控制和质量检查，复用的仍是原有检索能力。我会称它为 Agentic RAG 条件工作流，不把它说成通用自主规划 Agent。</p>
+<h4 id="section-52" class="question">Q24 LangGraph 的状态 节点和条件边分别是什么</h4>
+<p><strong>参考答案：</strong>状态保存当前问题、资料、答案和计数等执行上下文。节点完成一次操作并返回状态更新，例如检索节点更新文档和次数。条件边读取状态决定去生成、重试或兜底。这样数据与控制关系明确，但节点是否可恢复、结果是否可重放仍需要额外设计，画出图本身不能解决可靠性。</p>
+<h4 id="section-53" class="question">Q25 模型不按要求输出相关或不相关怎么办</h4>
+<p><strong>参考答案：</strong>当前代码通过包含关系判断“相关／不相关”和“有支撑／无支撑”，先排除否定词，未识别为通过就按失败处理。这种文本解析比较脆弱。如果改造，可以采用受约束的结构化输出，校验枚举与字段，记录解析失败，有限重试后保守终止。还应避免把格式失败和真正不相关混为同一指标。</p>
+<h4 id="section-54" class="question">Q26 如何防止 Agent 无限循环和费用失控</h4>
+<p><strong>参考答案：</strong>项目有失败次数限制、上下文字符上限和框架递归限制，但没有完整 token、费用或总时间预算。持续不相关到第 <code>3</code> 次失败后兜底，持续无支撑到第 <code>2</code> 次失败后兜底。<code>MAX_GRAPH_STEPS = 10</code> 实际用于计算递归限制 <code>30</code>，不能说严格最多十个节点。改造应统一检查调用次数、总时长和预算，并对取消与超限定义终止结果。</p>
+<h4 id="section-55" class="question">Q27 它有没有实现自主 Function Calling</h4>
+<p><strong>参考答案：</strong>没有完整实现。状态图固定调用 <code>search_knowledge</code>，模型负责相关性和支撑判断，没有读取多个工具后自主选择。工具中心存在注册、开关和定义预览，但不能据此宣称自主调用已接入。应依据实际运行路径回答，而不是根据函数名或管理页面判断功能。</p>
+<h4 id="section-56" class="question">Q28 如果让模型自主选择工具 你如何改造</h4>
+<p><strong>参考答案：</strong>先定义完整工具 schema 和执行范围，再把允许的工具绑定到模型。模型返回 tool calls 后，由应用校验工具名、参数和用户权限，执行工具，并以对应 <code>tool_call_id</code> 回传结果，直到模型产出最终答案或达到预算。项目当前定义转换把参数都声明为字符串，缺少完整类型与必填约束，需要先修正。模型决定“请求什么”，应用仍决定“允许执行什么”。</p>
+<h4 id="section-57" class="question">Q29 应用挂多个知识库 Agent 会都检索吗</h4>
+<p><strong>参考答案：</strong>当前不会，检索节点只取 <code>kb_ids[0]</code>，工具内部还使用全局默认策略。普通模式可传多个知识库，Agent 模式没有继承同样的范围和配置。如果改造，应在执行上下文中显式传递知识库集合、检索策略、模型和 Prompt，并在工具侧验证权限。用答案只在第二个库的测试，可以暴露这类差异。</p>
+<h4 id="section-58" class="question">Q30 能否暂停 Agent 后继续执行</h4>
+<p><strong>参考答案：</strong>当前图没有配置持久化 checkpointer，数据库里的 AgentStep 是日志，不是可恢复检查点。增加恢复能力时，需要持久化状态、执行身份与版本，并设计节点幂等，避免恢复后重复执行工具。涉及外部写入的工具还需要操作幂等键与结果确认。仅有历史步骤记录不能直接声称支持断点续跑。</p>
+<p>代码核对：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/graph.py">固定工具调用</a><span class="source-line"> 第 121 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/tools.py">工具 schema</a><span class="source-line"> 第 109 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/agent_service.py">执行上限</a><span class="source-line"> 第 126 行</span> 。</p>
+<h3 id="section-59">第六组 效果评测与实验设计</h3>
+<p>考察重点：能否证明改动有效，并识别评测定义与偏差。</p>
+<h4 id="section-60" class="question">Q31 如何判断一次优化有没有效果</h4>
+<p><strong>参考答案：</strong>准备固定且人工核对的评测集，包含型号、同义表达、跨条款、多轮、省略和无答案问题。固定模型、Prompt、知识版本等条件，每次只改变一个主要变量，比较四项指标及延迟、调用成本、失败和拒答情况。还要抽样审查答案，避免仅看平均分。当前项目提供了评测入口，但没有足够证据可直接报个人提升数字。</p>
+<h4 id="section-61" class="question">Q32 四个评测指标分别测什么</h4>
+<p><strong>参考答案：</strong>Context Recall 看标准答案所需信息是否被召回；Context Precision 看有用资料是否排在前面；Faithfulness 看答案陈述是否有资料支撑；Answer Relevancy 看答案是否回应原问题。项目分别使用参考片段或陈述判断、相关位置的累计精确率平均、陈述支撑比例、反推问题后的向量相似度，是自定义实现。</p>
+<h4 id="section-62" class="question">Q33 Context Precision 是相关条数除以总条数吗</h4>
+<p><strong>参考答案：</strong>项目不是这样算。它在每个相关位置计算截至该位置的精确率，再对所有相关位置取平均。例如 <code>[相关, 不相关, 相关]</code> 的分数为 <code>(1/1 + 2/3) / 2 = 0.8333</code>。有用资料越靠前越占优。不过 <code>[相关, 不相关, 不相关]</code> 会得 <code>1</code>，说明它对尾部噪声的惩罚有限，应配合其他噪声和成本指标解释。</p>
+<h4 id="section-63" class="question">Q34 为什么开启父块回填后召回分数可能反而下降</h4>
+<p><strong>参考答案：</strong>评测用例可能记录的是子块 ID，但回填把最终结果的 <code>chunk_id</code> 换成父块 ID，直接取集合交集会漏记实际命中。因此要分开记录“用于匹配的子块”和“用于生成的父块”，再定义统一评测口径。重新切分也会改变 ID，参考标注需要版本或稳定标识。先排除测量问题，再讨论检索质量下降。</p>
+<h4 id="section-64" class="question">Q35 使用同一个模型生成和评分可靠吗</h4>
+<p><strong>参考答案：</strong>有偏差风险。模型可能对自身生成风格更宽容，自动生成的用例也可能偏向简单问题。项目用同一全局对话配置进行生成和裁判，温度为零仍不保证完全稳定。应加入人工标注、不同来源问题、独立裁判或抽样复核，并记录重复评测波动。裁判分数是辅助证据，不是客观真值。</p>
+<h4 id="section-65" class="question">Q36 当前评测能证明 Agent 更好吗</h4>
+<p><strong>参考答案：</strong>不能直接证明。批量任务调用普通检索和生成，没有运行完整 Agent 图。要比较 Agent 与普通模式，应保持知识与模型条件一致，对两种链路端到端执行，同时记录回答质量、检索次数、模型调用、总时长、兜底和失败率。Agent 增加检查可能改善质量，也可能增加成本和延迟，必须测量这个取舍。</p>
+<p>代码核对：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/evaluator.py">指标计算</a><span class="source-line"> 第 135 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/eval_task_service.py">批量评测入口</a><span class="source-line"> 第 122 行</span> 。</p>
+<h3 id="section-66">第七组 生产工程与失败路径</h3>
+<p>考察重点：能否从功能演示深入到安全、并发、恢复和可观测性。</p>
+<h4 id="section-67" class="question">Q37 BackgroundTasks 能否承担可靠文档处理</h4>
+<p><strong>参考答案：</strong>它适合简单的进程内后台操作，响应发出后执行，但服务重启或崩溃可能中断任务。任务表能记录状态，不能替代持久化队列。生产改造应定义任务领取、原子状态转换、超时、重试、幂等和失败恢复，再根据规模选择数据库任务表或独立队列。具体组件不是重点，可靠语义才是重点。</p>
+<h4 id="section-68" class="question">Q38 两个人同时触发同一文档处理 怎么办</h4>
+<p><strong>参考答案：</strong>“先读状态、再更新状态”的校验可能同时通过，按钮禁用也挡不住并发请求。当前解析与向量化有状态检查，切分的重复处理保护也不完整。如果改造，应使用条件更新或锁实现原子领取，并约束同文档互斥阶段和处理版本。测试用并发请求验证只有一个任务实际获得执行权。</p>
+<h4 id="section-69" class="question">Q39 向量化一半失败了怎么办</h4>
+<p><strong>参考答案：</strong>当前每批 <code>10</code> 条，模型调用失败就标记这一批失败并继续其他批次，最后汇总文档和任务状态。upsert 避免重复插入，但再次执行会遍历全部可检索片段，并非只重试失败块。改造可按版本与状态选择待处理批次，同时校验返回向量数量和维度，并区分模型失败、向量写入失败和业务状态回写失败。</p>
+<h4 id="section-70" class="question">Q40 MySQL 与 PostgreSQL 如何保证一致</h4>
+<p><strong>参考答案：</strong>当前没有跨库原子事务，可能出现向量写入成功但业务状态更新失败，或旧向量清理与片段删除不同步。对于当前范围，可以先明确操作顺序、幂等和补偿，再加入版本及定期对账。查询只读取发布成功的版本可以减少半成品暴露。不能因为有状态字段就声称已经解决最终一致性。</p>
+<h4 id="section-71" class="question">Q41 用户或文档试图让 Agent 越权 怎么处理</h4>
+<p><strong>参考答案：</strong>权限必须在应用与工具执行层校验，不能依赖 Prompt。项目对管理接口和会话归属做了鉴权，但文件上传下载没有鉴权，密码直接存储比较；资料也可能包含恶意指令。改造要落实文档范围校验、密码哈希、文件名与路径限制，明确资料是不可信数据，并对工具参数和操作进行服务器端授权。模型判断不能授予权限。</p>
+<h4 id="section-72" class="question">Q42 用户说回答很慢 你怎么定位</h4>
+<p><strong>参考答案：</strong>先分解问题改写、Embedding、向量查询、BM25、重排、生成与 Agent 裁判调用的耗时，并记录首个正文事件与最终完成时间。普通模式与 Agent 模式不能混在一起比较。项目有检索阶段和总耗时，但 AgentStep 耗时为零，token 字段也没有在当前问答链路完整采集。需要补齐测量，再针对瓶颈做连接复用、有界并发或调用裁减。</p>
+<p>代码核对：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/api/vectorize.py">任务触发</a><span class="source-line"> 第 16 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/agent_service.py">步骤记录</a><span class="source-line"> 第 26 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/account_service.py">账号处理</a><span class="source-line"> 第 32 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/api/files.py">文件接口</a><span class="source-line"> 第 12 行</span> 。</p>
+<h3 id="section-73">第八组 深入追问与个人证据</h3>
+<p>考察重点：能否选择有价值的问题，设计可复现验证，并如实表达结果。</p>
+<h4 id="section-74" class="question">Q43 如果只让你改三处 你会优先改哪里</h4>
+<p><strong>参考答案：</strong>我会先处理查询模型与知识库绑定不一致、知识更新后旧向量残留、Agent 知识库和应用配置传递缺失。这三项影响回答所基于的数据与范围，比先增加更多工具更基础。针对 Agent 岗位，基础问题解决后，再增加严格工具 schema 和自主调用循环。优先级应由正确性、用户影响和验证成本决定。</p>
+<h4 id="section-75" class="question">Q44 你如何证明这些问题确实存在并已经修复</h4>
+<p><strong>参考答案：</strong>先写失败用例。例如旧库用模型 A 向量化，切换全局模型 B 后查询；文档先产生一个旧条款，更新并重新解析切分，再查询旧条款；把答案只放在第二个知识库，运行 Agent。保留修复前失败和修复后通过的证据，还要覆盖无答案、任务失败和重复执行。本文只做静态分析，所以尚不能声称这些运行测试已经完成。</p>
+<h4 id="section-76" class="question">Q45 如果面试官问上线规模和提升数字 你怎么回答</h4>
+<p><strong>参考答案：</strong>按实际证据回答。没有上线就说明是研究或本地实践，交代数据来源与规模；没有前后对照就不报提升百分比。完成实验后，应说明评测集、模型、策略、重复次数、指标定义和成本变化。一个范围明确、能复现的改造，比无法解释来源的“准确率提升百分之三十”更有说服力。</p>
+<h2 id="section-77">7 将研究转化成可写进简历的实践</h2>
+<p>以下均为待实践方案，本文没有实施业务代码改动。</p>
+<h3 id="section-78">7.1 实践一 修复检索正确性</h3>
+<p>目标是确保查询模型空间一致，更新后的知识不会与旧知识混合。先准备能暴露问题的最小知识库，再修复模型绑定查询和旧向量失效逻辑。验收覆盖全局模型切换、同维度不同模型、文档更新、重复处理和处理中失败。</p>
+<p>交付证据包括失败复现记录、最小代码改动、必要回归测试和更新前后的检索结果。涉及版本字段或 schema 的方案应先明确范围，再实施。</p>
+<h3 id="section-79">7.2 实践二 补足 Agent 应用配置与工具执行</h3>
+<p>第一阶段先让 Agent 使用应用挂载的全部知识库、策略、模型和 Prompt，避免普通模式与 Agent 模式行为分叉。第二阶段再接入模型自主工具调用，补完整 schema、参数校验、权限、调用结果关联、超时与预算。</p>
+<p>验收至少包含：答案仅在第二个库；指定策略与默认策略明显不同；未知工具；错误参数；停用工具；越权文档；工具失败；持续请求工具达到上限；正常终止。断点恢复属于额外能力，需要检查点和幂等设计，不能顺带宣称已经具备。</p>
+<h3 id="section-80">7.3 实践三 建立端到端效果对照</h3>
+<p>准备人工确认的用例，包含型号、同义表达、跨条款、表格、多轮和无答案问题。在固定知识版本下比较向量基线、混合检索、重排、父块回填和 Agent；校正父子 ID 评测口径。</p>
+<p>记录质量、拒答、异常、耗时和调用成本，人工复核部分结果。当前每批上限为 <code>20</code>，可以拆成多个固定批次并统一汇总，不应为了跑大评测直接绕过既有预算保护。报告中要保留失败数量，避免只统计成功样本产生幸存者偏差。</p>
+<h3 id="section-81">7.4 实践记录模板</h3>
+<div class="table-scroll"><table><thead><tr><th>字段</th><th>应填写的证据</th></tr></thead><tbody>
+<tr><td>问题</td><td>具体触发条件、错误表现及影响</td></tr>
+<tr><td>个人改动</td><td>修改的模块、接口或状态，不写笼统的“优化系统”</td></tr>
+<tr><td>设计依据</td><td>为什么选择这个方案，放弃方案的具体代价</td></tr>
+<tr><td>验证</td><td>失败复现、正常路径、边界与回归结果</td></tr>
+<tr><td>效果</td><td>固定条件下的前后数据，没有测量就写未测量</td></tr>
+<tr><td>边界</td><td>未覆盖的场景、数据规模、未上线或未验证的部分</td></tr>
+</tbody></table></div>
+<h2 id="section-82">8 面试前复习与源码导航</h2>
+<h3 id="section-83">8.1 建议的源码阅读顺序</h3>
+<div class="table-scroll"><table><thead><tr><th>顺序</th><th>文件</th><th>要回答的问题</th></tr></thead><tbody>
+<tr><td>1</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/chat_service.py">chat_service.py</a><span class="source-line"> 第 138 行</span></td><td>一次提问如何从会话走到最终答案</td></tr>
+<tr><td>2</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/retrieval_service.py">retrieval_service.py</a><span class="source-line"> 第 172 行</span></td><td>各阶段输入输出和分数如何变化</td></tr>
+<tr><td>3</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/retriever.py">retriever.py</a><span class="source-line"> 第 33 行</span></td><td>型号分词、BM25 与 RRF 如何工作</td></tr>
+<tr><td>4</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/splitter.py">splitter.py</a><span class="source-line"> 第 109 行</span></td><td>父子块如何生成和关联</td></tr>
+<tr><td>5</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/vectorize_service.py">vectorize_service.py</a><span class="source-line"> 第 80 行</span></td><td>分批写向量如何处理失败</td></tr>
+<tr><td>6</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/graph.py">graph.py</a><span class="source-line"> 第 243 行</span></td><td>状态 条件边 重试和终止如何表达</td></tr>
+<tr><td>7</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/tools.py">tools.py</a><span class="source-line"> 第 141 行</span></td><td>工具执行 开关与日志如何组织</td></tr>
+<tr><td>8</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/ai/evaluator.py">evaluator.py</a><span class="source-line"> 第 162 行</span></td><td>指标定义和计算口径是什么</td></tr>
+<tr><td>9</td><td><a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/service/eval_task_service.py">eval_task_service.py</a><span class="source-line"> 第 122 行</span></td><td>批量评测和报告如何形成</td></tr>
+</tbody></table></div>
+<h3 id="section-84">8.2 十分钟复习清单</h3>
+<ul>
+<li>能在三十秒内讲清业务问题和完整流程。</li>
+<li>能解释向量与 BM25 为什么互补，以及 RRF 为什么按排名融合。</li>
+<li>能区分粗召回、重排与父块回填的作用。</li>
+<li>能解释普通 RAG 与 Agentic RAG 的执行差异。</li>
+<li>能讲清固定工作流与自主工具调用的区别。</li>
+<li>能说明多轮历史的实际使用位置。</li>
+<li>能正确计算一个 RRF 示例和一个 Context Precision 示例。</li>
+<li>能指出模型绑定、旧向量与多知识库三个正确性问题。</li>
+<li>能描述至少一个自己真正完成的失败复现与回归验证。</li>
+<li>能明确个人贡献、未验证范围和真实数据来源。</li>
+</ul>
+<h3 id="section-85">8.3 验证边界</h3>
+<p>本文没有运行项目测试。测试公共夹具连接开发数据库，测试结束会按名称标记清扫数据；不能把“存在测试文件”表述为“全部测试通过”。正式实践应使用隔离测试环境，确认模型调用成本及数据清理范围后再执行。</p>
+<p>依据：<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/tests/conftest.py">测试夹具</a><span class="source-line"> 第 5 行</span> 、<a href="/Users/chengwz/workspace/codes/ai_rag/fastapi-app/tests/conftest.py">自动清扫夹具</a><span class="source-line"> 第 137 行</span> 。</p>
+<p>本文中的代码链接定位研读入口，核心行为已按调用关系核对；功能正确性、性能和业务效果仍以复现、测试及测量结果为准。</p><p class="document-footer">内容源：rag-interview-guide.md　｜　源码研读材料　｜　业务运行与性能未验证</p></main></div></body></html>
